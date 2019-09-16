@@ -31,7 +31,7 @@ def computeDistance(df,solution):
 	distance = 0
 	for i in range(0, len(path), 1):
 		connect = df.iloc[i:i+2,:]
-		distance += #Compute the Eucledian Distance for the two points that are connected, accumulate in "distance" and return
+		distance += np.linalg.norm(np.array(np.array(connect))) #Compute the Eucledian Distance for the two points that are connected, accumulate in "distance" and return
 	print("Distance for this path is: "+str(distance))
 	return distance
 
@@ -44,5 +44,5 @@ df = df.sample(frac =fractionToSample)
 print("Size of DF: "+ str(df.shape))
 path = getRandomPath(df["Node"])
 
-#plotPath(df,path)
-computeDistance(df,path)
+# plotPath(df,path)
+print(computeDistance(df,path))
