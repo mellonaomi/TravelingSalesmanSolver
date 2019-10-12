@@ -84,7 +84,7 @@ fractionToSample = 0.001
 
 df = df.sample(frac =fractionToSample)
 print("Size of DF: "+ str(df.shape))
-path = getRandomPath(df["Node"])#[1:3]
+path = getRandomPath(df["Node"])[1:30]
 
 
 df = df[df["Node"].isin(path)]
@@ -102,3 +102,8 @@ testPath = [0,1,2,3]
 #computeDistance(testCase,testPath)
 solution = solution_Greedy(df)
 plotPath(df,solution)
+
+
+#Compare the solution with a random path
+print(computeDistance(df,solution))
+print(computeDistance(df,getRandomPath(df["Node"])))
