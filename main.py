@@ -34,7 +34,7 @@ def getRandomPath(nodes):
 	nodes = nodes.tolist()
 	return rnd.sample(nodes,len(nodes))
 
-def computeDistance(df,solution):
+def computeDistance(df,solution,verbose = False):
 	#Order by "path"
 	df = df.set_index('Node')
 	df = df.loc[solution]
@@ -48,11 +48,12 @@ def computeDistance(df,solution):
 		#print("and")
 		#print(point2)	
 		distance += eucDistance(point1,point2)
-	print("Distance for this path is: "+str(distance))
+	if verbose == True:
+		print("Distance for this path is: "+ str(distance))
 	return distance
 
 
-def solution_Greedy(df):
+def solution_greedy(df):
 	path = [df.iloc[0,]["Node"]]
 	for i in range(0,len(df["Node"])):
 		currentPoint = df.iloc[i,]
@@ -77,14 +78,70 @@ def solution_Greedy(df):
 	path = [int(p) for p in path]
 	return path
 
+def annealing_temperature(fraction):
+	return max(0.01, min(1, 1 - fraction))
+
+def annealing_acceptance_probability(cost, new_cost, temperature):
+	if new_cost < cost:
+		return 1
+	else:
+		p = np.exp(- (new_cost - cost) / temperature)
+		return p
+
+def annealing_random_step(nodes):
+	#nodes = nodes.tolist()
+	i = j = 0
+	while i==j:
+		i = rnd.sample(range(len(nodes)),1)[0]
+		j = rnd.sample(range(len(nodes)),1)[0]
+	#Swap
+	temp = nodes[i]
+	nodes[i] = nodes[j]
+	nodes[j] = temp
+	return nodes
+
+def annealing_plot(states, costs):
+	plt.figure()
+	plt.suptitle("Cost of Simmulated Annealing")
+	plt.plot(costs, 'b')
+	plt.title("Costs")
+	plt.show()
+
+
+
+def solution_annealing(df,maxsteps=1000,debug=True):
+	state = getRandomPath(df["Node"])
+	cost = computeDistance(df,state)
+	states, costs = [state], [cost]
+	for step in range(maxsteps):
+		fraction = step / float(maxsteps)
+		T = annealing_temperature(fraction)
+		new_state = annealing_random_step(state)
+		new_cost = computeDistance(df,new_state)
+		if debug: 
+			print(str(step) + " --> C: " + str(cost) )
+		if annealing_acceptance_probability(cost, new_cost, T) > rnd.random():
+				state, cost = new_state, new_cost		
+				states.append(state[:])
+				costs.append(cost)		
+	index_best = min(range(len(costs)), key=costs.__getitem__)
+	return states[index_best], costs[index_best], states, costs
+
+
 
 df = pd.read_csv("data/china.txt")
 
+
+
 fractionToSample = 0.001
 
-df = df.sample(frac =fractionToSample)
+
+df = df.sample(frac = fractionToSample)
 print("Size of DF: "+ str(df.shape))
-path = getRandomPath(df["Node"])[1:30]
+
+path = getRandomPath(df["Node"])#[1:30]
+#distance1 = computeDistance(df,path)
+
 
 
 df = df[df["Node"].isin(path)]
@@ -92,18 +149,23 @@ df = df[df["Node"].isin(path)]
 #print(computeDistance(df,path))
 #print(df)
 testCase = pd.DataFrame({
-	'Node':[0,1,2,3],
-	'X':[0,90,2,0.5], 
-	'Y':[0,1,5,0.5]}
-	,index = [0,1,2,3])
+	'Node':[0,1,2,3,4,5,6],
+	'X':[0,90,2,0.5,2,1,8], 
+	'Y':[0,1,5,0.5,9,4,3]}
+	,index = [0,1,2,3,4,5,6])
 
-testPath = [0,1,2,3]
+testPath = [0,1,2,3,4,5,6]
 #print(df2)
 #computeDistance(testCase,testPath)
-solution = solution_Greedy(df)
-plotPath(df,solution)
+#df = testCase
+result_greedy = solution_greedy(df)
+result_random = getRandomPath(df["Node"])
 
 
-#Compare the solution with a random path
-print(computeDistance(df,solution))
-print(computeDistance(df,getRandomPath(df["Node"])))
+result_annealing, cost_annealing, states, costs = solution_annealing(df,maxsteps=1000,debug=False)
+#annealing_plot(states,costs)
+#plotPath(df,final_state)
+
+print("Random Cost: " + str(computeDistance(df,result_random)))
+print("Greedy Cost: " + str(computeDistance(df,result_greedy)))
+print("Simmulated Annealing Cost: " + str(computeDistance(df,result_annealing)))
